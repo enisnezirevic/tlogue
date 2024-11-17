@@ -1,0 +1,49 @@
+name: "tlogue"
+services:
+  server:
+    container_name: tlogue-server
+    build:
+      context: "./"
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./:/app"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    depends_on:
+      - database
+    networks:
+      - tlogue_network
+
+  database:
+    container_name: tlogue-database
+    image: postgres:16.3-alpine
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    networks:
+      - tlogue_network
+
+  redis:
+    container_name: tlogue-redis
+    image: redis:7.4.1-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - tlogue_network
+
+networks:
+  tlogue_network:
+
+volumes:
+  postgres_data:

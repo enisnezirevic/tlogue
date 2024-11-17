@@ -1,5 +1,11 @@
 # Environment variable file
 *.env
 
+# Virtual Enviorment
+.venv
+
 # JetBrains IDE
 .idea
+
+# PyTest
+.pytest_cache
