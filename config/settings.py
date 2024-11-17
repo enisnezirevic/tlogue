@@ -2,6 +2,8 @@ from pathlib import Path
 
 import environ
 
+from src.accounts.apps import AccountsConfig
+
 # Environment variables
 env = environ.Env()
 environ.Env.read_env()
@@ -16,8 +18,11 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 INSTALLED_APPS = [
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
     "rest_framework",
-    "django_filters"
+    "django_filters",
+    "accounts.apps.AccountsConfig"
 ]
 
 MIDDLEWARE = [
