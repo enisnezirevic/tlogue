@@ -28,7 +28,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "tlogue.urls"
+ROOT_URLCONF = "config.urls"
 
 # Database
 DATABASES = {
