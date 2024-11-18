@@ -72,3 +72,21 @@ class AwsCognitoIdentityProvider:
             )
         except ClientError:
             raise ValidationError({"message": "Failed to add user to group."})
+
+    def is_preferred_username_taken(self, preferred_username: str) -> bool:
+        """
+        Check whether username is already in use.
+
+        :param preferred_username: username to check.
+        :return: true if existing user is using the given username, false otherwise.
+        """
+        try:
+            response = self.cognito_client.get_client_instance().list_users(
+                UserPoolId=self.cognito_client.user_pool_id,
+                AttributesToGet=["preferred_username"],
+                Limit=1,
+                Filter=f"preferred_username = \"{preferred_username}\""
+            )
+            return len(response.get("Users", [])) > 0
+        except ClientError:
+            raise ValidationError({"message": "Failed to validate if the username is already taken."})

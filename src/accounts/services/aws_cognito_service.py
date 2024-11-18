@@ -1,3 +1,5 @@
+from rest_framework.exceptions import ValidationError
+
 from accounts.services.aws_cognito_client import AwsCognitoClient
 from accounts.services.aws_cognito_identity_provider import AwsCognitoIdentityProvider, SignUpUserModel
 from accounts.settings.cognito_config import AwsCognitoConfig
@@ -24,5 +26,9 @@ class AwsCognitoService:
 
             :param user: User model containing all necessary attributes.
         """
+        username_taken = self.identity_provider.is_preferred_username_taken(user.username)
+        if username_taken:
+            raise ValidationError({"message": "Username is already in use."})
+
         self.identity_provider.sign_up_user(user=user)
         self.identity_provider.add_user_to_group(email=user.email, group_name=DEFAULT_USER_GROUP)
