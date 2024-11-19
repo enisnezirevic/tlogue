@@ -34,5 +34,8 @@ class AwsCognitoService:
         ])
         composite_validation.validate(user)
 
-        self.identity_provider.sign_up_user(user=user)
-        self.identity_provider.add_user_to_group(email=user.email, group_name=DEFAULT_USER_GROUP)
+        try:
+            self.identity_provider.sign_up_user(user=user)
+            self.identity_provider.add_user_to_group(email=user.email, group_name=DEFAULT_USER_GROUP)
+        except Exception:
+            self.identity_provider.delete_user(email=user.email)

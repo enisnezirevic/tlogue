@@ -60,6 +60,19 @@ class AwsCognitoIdentityProvider:
                     "message": "Sign-up failed due to unexpected error. Please try again later."
                 })
 
+    def delete_user(self, email: str) -> None:
+        """
+            Deletes a user from the AWS Cognito user pool.
+            :param email: The email address of the user to delete.
+        """
+        try:
+            cognito_client = self.cognito_client.get_client_instance()
+            cognito_client.delete_user(UserPoolId=cognito_client.user_pool_id, Username=email)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "UserNotFoundException":
+                raise ValidationError({"message": f"User with the username of {email} could not be found."})
+            raise ValidationError({"message": f"Failed to delete the user with email {email}."})
+
     def add_user_to_group(self, email: str, group_name: str) -> None:
         """
             Adds a user to a specified group in the AWS Cognito user pool.
