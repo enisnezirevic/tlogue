@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from accounts.models import SignUpUserModel
 from accounts.services.aws_cognito_service import AwsCognitoService
+from accounts.validators.account_validator import AccountValidator
 
 
 @api_view(["POST"])
@@ -22,6 +23,7 @@ def sign_up_user(request) -> Response:
         last_name=last_name
     )
 
+    AccountValidator().validate(user)
     aws_cognito_service = AwsCognitoService()
     aws_cognito_service.sign_up_user(user)
 
