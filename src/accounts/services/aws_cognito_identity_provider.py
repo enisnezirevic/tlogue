@@ -51,10 +51,14 @@ class AwsCognitoIdentityProvider:
                 raise ValidationError({
                     "password": e.response["Error"]["Message"],
                 })
-
-            raise ValidationError({
-                "message": "Sign-up failed due to unexpected error."
-            })
+            elif e.response["Error"]["Code"] == "UsernameExistsException":
+                raise ValidationError({
+                    "email": "This email address is associated with another account.",
+                })
+            else:
+                raise ValidationError({
+                    "message": "Sign-up failed due to unexpected error. Please try again later."
+                })
 
     def add_user_to_group(self, email: str, group_name: str) -> None:
         """
