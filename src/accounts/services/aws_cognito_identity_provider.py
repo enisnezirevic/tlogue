@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import hmac
+import logging
 
 from botocore.exceptions import ClientError
 from rest_framework.exceptions import ValidationError
@@ -20,6 +21,12 @@ class AwsCognitoIdentityProvider:
         self.client_secret = client_secret
 
     def __secret_hash(self, email: str) -> str:
+        """
+            Generates a secret hash for AWS Cognito authentication.
+
+            :param email: The email address of the user.
+            :return: The computed secret hash.
+        """
         key = self.client_secret.encode()
         msg = bytes(email + self.client_id, "utf-8")
         secret_hash = base64.b64encode(
@@ -46,19 +53,10 @@ class AwsCognitoIdentityProvider:
                     {"Name": "family_name", "Value": user.last_name},
                 ], "SecretHash": self.__secret_hash(user.email)}
             self.cognito_client.get_client_instance().sign_up(**kwargs)
+            logging.info(f"User {user.email} signed up successfully.")
         except ClientError as e:
-            if e.response["Error"]["Code"] == "InvalidPasswordException":
-                raise ValidationError({
-                    "password": e.response["Error"]["Message"],
-                })
-            elif e.response["Error"]["Code"] == "UsernameExistsException":
-                raise ValidationError({
-                    "email": "This email address is associated with another account.",
-                })
-            else:
-                raise ValidationError({
-                    "message": "Sign-up failed due to unexpected error. Please try again later."
-                })
+            logging.error(f"Failed to sign up user {user.email}: {e.response['Error']['Message']}")
+            self.__handle_client_error(error=e)
 
     def delete_user(self, email: str) -> None:
         """
@@ -66,12 +64,14 @@ class AwsCognitoIdentityProvider:
             :param email: The email address of the user to delete.
         """
         try:
-            cognito_client = self.cognito_client.get_client_instance()
-            cognito_client.delete_user(UserPoolId=cognito_client.user_pool_id, Username=email)
+            self.cognito_client.get_client_instance().admin_delete_user(
+                UserPoolId=self.cognito_client.user_pool_id,
+                Username=email
+            )
+            logging.info(f"User {email} deleted successfully.")
         except ClientError as e:
-            if e.response["Error"]["Code"] == "UserNotFoundException":
-                raise ValidationError({"message": f"User with the username of {email} could not be found."})
-            raise ValidationError({"message": f"Failed to delete the user with email {email}."})
+            logging.error(f"Failed to delete user {email}: {e.response['Error']['Message']}")
+            self.__handle_client_error(error=e, attribute_name=email)
 
     def add_user_to_group(self, email: str, group_name: str) -> None:
         """
@@ -87,8 +87,10 @@ class AwsCognitoIdentityProvider:
                 Username=email,
                 GroupName=group_name,
             )
-        except ClientError:
-            raise ValidationError({"message": "Failed to add user to group."})
+            logging.info(f"User {email} added to group {group_name} successfully.")
+        except ClientError as e:
+            logging.error(f"Failed to add user {email} to group {group_name}: {e.response['Error']['Message']}")
+            self.__handle_client_error(error=e)
 
     def is_preferred_username_taken(self, preferred_username: str) -> bool:
         """
@@ -104,6 +106,34 @@ class AwsCognitoIdentityProvider:
                 Limit=1,
                 Filter=f"preferred_username = \"{preferred_username}\""
             )
+            logging.info(f"Checked username availability for '{preferred_username}'")
             return len(response.get("Users", [])) > 0
-        except ClientError:
-            raise ValidationError({"message": "Failed to validate if the username is already taken."})
+        except ClientError as e:
+            logging.error(f"Error checking username availability for '{preferred_username}': {e.response['Error']['Message']}")
+            self.__handle_client_error(error=e)
+
+    @staticmethod
+    def __handle_client_error(error: ClientError, attribute_name: str = None) -> None:
+        """
+        Handles AWS Cognito ClientError exceptions by mapping error codes to ValidationError messages.
+
+        :param error: The ClientError exception raised by AWS Cognito.
+        :raises ValidationError: Custom error mapped from AWS Cognito's response.
+        """
+        error_code = error.response["Error"]["Code"]
+        error_message = error.response["Error"]["Message"]
+
+        error_mapping = {
+            "InvalidPasswordException": error_message,
+            "UsernameExistsException": "This email address is already associated with an account.",
+            "UserLambdaValidationException": "We could not process your registration. Please try again.",
+            "ResourceNotFoundException": "Unable to process the request at this time. Please try again later.",
+            "UserNotFoundException": f"User with the username '{attribute_name}' could not be found." if attribute_name else "User not found.",
+        }
+
+        # Default error message if none is found in error_mapping
+        message = error_mapping.get(error_code, "An unexpected error occurred. Please try again.")
+
+        logging.error(f"AWS Cognito error occurred: {error_code} - {error_message}")
+
+        raise ValidationError({"message": message})
