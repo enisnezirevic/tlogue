@@ -42,7 +42,7 @@ def sign_in_user(request):
         key="refresh_token",
         value=user_auth_details.refresh_token,
         httponly=True,
-        max_age=30,
+        max_age=2592000,  # 30 Days in seconds
         secure=True,
         samesite="Strict",
     )

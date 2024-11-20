@@ -89,6 +89,29 @@ class AwsCognitoIdentityProvider:
             logging.error(f"Failed to sign in: {e.response['Error']['Message']}")
             raise ValidationError(f"Failed to sign up user {user.email}: {e.response['Error']['Message']}")
 
+    def refresh_token(self, refresh_token: str, jwt_token_username: str):
+        """
+        Refresh access and ID tokens using AWS Cognito.
+
+        :param jwt_token_username: Value of the 'username' attribute that is found inside payload data of the jwt token.
+        :param refresh_token: The user's refresh token.
+        :return: New tokens.
+        """
+        try:
+            kwargs = {
+                "AuthFlow": "REFRESH_TOKEN_AUTH",
+                "ClientId": self.client_id,
+                "AuthParameters": {
+                    "REFRESH_TOKEN": refresh_token,
+                    "SECRET_HASH": self.__secret_hash(jwt_token_username),
+                }
+            }
+            response = self.cognito_client.get_client_instance().initiate_auth(**kwargs)
+            return response["AuthenticationResult"]
+        except ClientError as e:
+            logging.error(f"Failed to refresh token: {e.response['Error']['Message']}")
+            raise ValidationError(f"Failed to refresh token: {e.response['Error']['Message']}")
+
     def delete_user(self, email: str) -> None:
         """
         Deletes a user from the AWS Cognito user pool.
