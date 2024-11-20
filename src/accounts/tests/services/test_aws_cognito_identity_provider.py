@@ -25,6 +25,12 @@ def aws_identity_provider(aws_cognito_client):
         client_secret="test_client_secret",
     )
 
+@pytest.fixture
+def mock_client_instance(aws_cognito_client):
+    instance = aws_cognito_client.get_client_instance.return_value
+    instance.user_pool_id = aws_cognito_client.user_pool_id
+    return instance
+
 
 @pytest.fixture
 def test_user():
@@ -37,9 +43,8 @@ def test_user():
     )
 
 
-def test_sign_up_user_with_valid_data_should_create_user(aws_identity_provider, aws_cognito_client, test_user):
+def test_sign_up_user_with_valid_data_should_create_user(aws_identity_provider, mock_client_instance, test_user):
     # Arrange
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
     secret_hash_mock = "mocked_secret_hash"
 
     with patch.object(
@@ -62,9 +67,8 @@ def test_sign_up_user_with_valid_data_should_create_user(aws_identity_provider, 
     )
 
 
-def test_sign_up_user_with_invalid_data_should_raise_validation_error(aws_identity_provider, aws_cognito_client, test_user):
+def test_sign_up_user_with_invalid_data_should_raise_validation_error(aws_identity_provider, mock_client_instance, test_user):
     # Arrange
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
     mock_client_instance.sign_up.side_effect = ClientError(
         {"Error": {"Code": "SomeError", "Message": "Some error occurred"}}, "sign_up"
     )
@@ -75,24 +79,20 @@ def test_sign_up_user_with_invalid_data_should_raise_validation_error(aws_identi
 
 
 @pytest.mark.parametrize("email", ["testuser@email.com"])
-def test_delete_user_with_existing_user_should_succeed(aws_identity_provider, aws_cognito_client, email):
-    # Arrange
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
-
+def test_delete_user_with_existing_user_should_succeed(aws_identity_provider, mock_client_instance, email):
     # Act
     aws_identity_provider.delete_user(email)
 
     # Assert
     mock_client_instance.admin_delete_user.assert_called_once_with(
-        UserPoolId=aws_cognito_client.user_pool_id,
+        UserPoolId=mock_client_instance.user_pool_id,
         Username=email,
     )
 
 
 @pytest.mark.parametrize("email", ["test@email.com"])
-def test_delete_user_with_nonexistent_user_should_raise_validation_error(aws_identity_provider, aws_cognito_client, email):
+def test_delete_user_with_nonexistent_user_should_raise_validation_error(aws_identity_provider, mock_client_instance, email):
     # Arrange
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
     mock_client_instance.admin_delete_user.side_effect = ClientError(
         {"Error": {"Code": "UserNotFoundException", "Message": "User not found"}}, "admin_delete_user"
     )
@@ -102,33 +102,31 @@ def test_delete_user_with_nonexistent_user_should_raise_validation_error(aws_ide
         aws_identity_provider.delete_user(email)
 
     mock_client_instance.admin_delete_user.assert_called_once_with(
-        UserPoolId=aws_cognito_client.user_pool_id,
+        UserPoolId=mock_client_instance.user_pool_id,
         Username=email,
     )
 
 
-def test_add_user_to_group_with_valid_data_should_succeed(aws_identity_provider, aws_cognito_client):
+def test_add_user_to_group_with_valid_data_should_succeed(aws_identity_provider, mock_client_instance):
     # Arrange
     email = "user@example.com"
     group_name = "test-group"
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
 
     # Act
     aws_identity_provider.add_user_to_group(email=email, group_name=group_name)
 
     # Assert
     mock_client_instance.admin_add_user_to_group.assert_called_once_with(
-        UserPoolId=aws_cognito_client.user_pool_id,
+        UserPoolId=mock_client_instance.user_pool_id,
         Username=email,
         GroupName=group_name,
     )
 
 
-def test_add_user_to_group_with_nonexistent_user_should_raise_validation_error(aws_identity_provider, aws_cognito_client):
+def test_add_user_to_group_with_nonexistent_user_should_raise_validation_error(aws_identity_provider, mock_client_instance):
     # Arrange
     email = "user@example.com"
     group_name = "test-group"
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
     mock_client_instance.admin_add_user_to_group.side_effect = ClientError(
         {"Error": {"Code": "UserNotFoundException", "Message": "User not found."}}, "admin_add_user_to_group"
     )
@@ -138,16 +136,15 @@ def test_add_user_to_group_with_nonexistent_user_should_raise_validation_error(a
         aws_identity_provider.add_user_to_group(email, group_name)
 
     mock_client_instance.admin_add_user_to_group.assert_called_once_with(
-        UserPoolId=aws_cognito_client.user_pool_id,
+        UserPoolId=mock_client_instance.user_pool_id,
         Username=email,
         GroupName=group_name,
     )
 
 
 @pytest.mark.parametrize("username", ["testuser", "x"])
-def test_is_preferred_username_taken_with_existing_username_should_return_true(aws_identity_provider, aws_cognito_client, username):
+def test_is_preferred_username_taken_with_existing_username_should_return_true(aws_identity_provider, mock_client_instance, username):
     # Arrange
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
     mock_client_instance.list_users.return_value = {"Users": [{"Username": username}]}
 
     # Act
@@ -156,7 +153,7 @@ def test_is_preferred_username_taken_with_existing_username_should_return_true(a
     # Assert
     assert result is True
     mock_client_instance.list_users.assert_called_once_with(
-        UserPoolId=aws_cognito_client.user_pool_id,
+        UserPoolId=mock_client_instance.user_pool_id,
         AttributesToGet=["preferred_username"],
         Limit=1,
         Filter=f'preferred_username = "{username}"',
@@ -164,9 +161,8 @@ def test_is_preferred_username_taken_with_existing_username_should_return_true(a
 
 
 @pytest.mark.parametrize("username", ["testuser"])
-def test_is_preferred_username_taken_with_nonexistent_username_should_return_false(aws_identity_provider, aws_cognito_client, username):
+def test_is_preferred_username_taken_with_nonexistent_username_should_return_false(aws_identity_provider, mock_client_instance, username):
     # Arrange
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
     mock_client_instance.list_users.return_value = {"Users": []}
 
     # Act
@@ -175,16 +171,15 @@ def test_is_preferred_username_taken_with_nonexistent_username_should_return_fal
     # Assert
     assert result is False
     mock_client_instance.list_users.assert_called_once_with(
-        UserPoolId=aws_cognito_client.user_pool_id,
+        UserPoolId=mock_client_instance.user_pool_id,
         AttributesToGet=["preferred_username"],
         Limit=1,
         Filter=f'preferred_username = "{username}"',
     )
 
 
-def test_is_preferred_username_taken_with_error_should_raise_validation_error(aws_identity_provider, aws_cognito_client):
+def test_is_preferred_username_taken_with_error_should_raise_validation_error(aws_identity_provider, mock_client_instance):
     # Arrange
-    mock_client_instance = aws_cognito_client.get_client_instance.return_value
     mock_client_instance.list_users.side_effect = ClientError(
         {"Error": {"Code": "ResourceNotFoundException", "Message": "Resource not found."}}, "list_users"
     )
