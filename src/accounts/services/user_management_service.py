@@ -1,13 +1,13 @@
 import logging
 
+from botocore.exceptions import ClientError
 from rest_framework.exceptions import ValidationError
 
 from accounts.services.aws_cognito_client import AwsCognitoClient
 from accounts.services.aws_cognito_identity_provider import AwsCognitoIdentityProvider
 from accounts.services.user_service import UserService
-from accounts.settings.cognito_config import AwsCognitoConfig
+from accounts.settings.cognito_config import AwsCognitoConfig, DEFAULT_USER_GROUP
 from accounts.validators.account_validator import AccountValidator
-from settings.validation.account_settings import DEFAULT_USER_GROUP
 
 
 class UserManagementService:
@@ -41,8 +41,14 @@ class UserManagementService:
         try:
             # Sign up user in Cognito
             cognito_user = self.aws_cognito_service.sign_up_user(user)
-            self.aws_cognito_service.add_user_to_group(user.email, DEFAULT_USER_GROUP)
             logging.info(f"Creating new Cognito User {user.email}.")
+
+            # Assign them to a group
+            self.aws_cognito_service.add_user_to_group(user.email, DEFAULT_USER_GROUP)
+            logging.info(f"Assigning new User to Group {DEFAULT_USER_GROUP}.")
+
+            # Confirm user
+            self.aws_cognito_service.confirm_user(user.email)
 
             # Create the user locally
             self.user_service.create_user(
@@ -51,9 +57,10 @@ class UserManagementService:
                 username=user.username
             )
             logging.info(f"Creating new User locally {user.email}.")
-
-        except Exception as e:
+        except ClientError as e:
             self.aws_cognito_service.delete_user(user.email)
             logging.error(f"Failed to create Cognito User {user.email}: {e}")
+            raise ValidationError({"error": "Failed to create a new user."})
 
-            raise ValidationError({"error": str(e)})
+    def sign_in_user(self, user):
+        return self.aws_cognito_service.sign_in_user(user)

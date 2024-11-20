@@ -1,9 +1,11 @@
 from environ import environ
 
+DEFAULT_USER_GROUP = "Member"
+DEFAULT_AUTH_FLOW = "USER_PASSWORD_AUTH"
+
 # Read AWS Connection Keys From Environment
 env = environ.Env()
 env.read_env(".env")
-
 
 class AwsCognitoConfig:
     AWS_ACCESS_KEY = env("AWS_ACCESS_KEY")

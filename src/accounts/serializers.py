@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from accounts.dto_models import SignUpUserModel
+from accounts.dto_models import SignInUserModel, SignUpUserModel
 
 
 class SignUpUserSerializer(serializers.Serializer):
@@ -12,3 +12,11 @@ class SignUpUserSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         return SignUpUserModel(**validated_data)
+
+
+class SignInUserSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(write_only=True, required=True)
+
+    def create(self, validated_data):
+        return SignInUserModel(**validated_data)

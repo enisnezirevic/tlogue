@@ -1,8 +1,6 @@
 # Default User Group
 import re
 
-DEFAULT_USER_GROUP = "Member"
-
 # Name constraints
 # The name must:
 #     - Contain only alphabetic characters from the Latin alphabet, including accented characters (e.g., é, ñ, ü).

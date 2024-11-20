@@ -6,8 +6,9 @@ import logging
 from botocore.exceptions import ClientError
 from rest_framework.exceptions import ValidationError
 
-from accounts.dto_models import SignUpUserModel
+from accounts.dto_models import SignInResponse, SignInUserModel, SignUpUserModel
 from accounts.services.aws_cognito_client import AwsCognitoClient
+from accounts.settings.cognito_config import DEFAULT_AUTH_FLOW
 
 
 class AwsCognitoIdentityProvider:
@@ -60,6 +61,34 @@ class AwsCognitoIdentityProvider:
             logging.error(f"Failed to sign up user {user.email}: {e.response['Error']['Message']}")
             self.__handle_client_error(error=e)
 
+    def sign_in_user(self, user: SignInUserModel) -> SignInResponse:
+        """
+        Initiates authentication request to the AWS Cognito user pool.
+        :param user: User model containing the user's sign-in details.
+        :return: A dictionary containing the access token, refresh token, ID token, and response metadata.
+        """
+        try:
+            kwargs = {
+                "AuthFlow": DEFAULT_AUTH_FLOW,
+                "ClientId": self.client_id,
+                "AuthParameters": {
+                    "USERNAME": user.email,
+                    "PASSWORD": user.password,
+                    "SECRET_HASH": self.__secret_hash(user.email),
+                },
+            }
+            response = self.cognito_client.get_client_instance().initiate_auth(**kwargs)
+            auth_result = response["AuthenticationResult"]
+            return SignInResponse(
+                access_token=auth_result["AccessToken"],
+                refresh_token=auth_result["RefreshToken"],
+                expires_in=auth_result["ExpiresIn"],
+                token_type=auth_result["TokenType"],
+            )
+        except ClientError as e:
+            logging.error(f"Failed to sign in: {e.response['Error']['Message']}")
+            raise ValidationError(f"Failed to sign up user {user.email}: {e.response['Error']['Message']}")
+
     def delete_user(self, email: str) -> None:
         """
         Deletes a user from the AWS Cognito user pool.
@@ -93,6 +122,21 @@ class AwsCognitoIdentityProvider:
         except ClientError as e:
             logging.error(f"Failed to add user {email} to group {group_name}: {e.response['Error']['Message']}")
             self.__handle_client_error(error=e)
+
+    def confirm_user(self, email: str):
+        """
+        Confirm user in the AWS Cognito user pool, this allows the user to sign in.
+        :param email: Email address of the user.
+        """
+        try:
+            self.cognito_client.get_client_instance().admin_confirm_sign_up(
+                UserPoolId=self.cognito_client.user_pool_id,
+                Username=email
+            )
+            logging.info(f"User {email} confirmed successfully.")
+        except ClientError as e:
+            logging.error(f"Failed to confirm user {email}: {e.response['Error']['Message']}")
+            raise ValidationError(f"Failed to confirm user {email}.")
 
     @staticmethod
     def __handle_client_error(error: ClientError, attribute_name: str = None) -> None:
