@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from accounts.models import SignUpUserModel
+from accounts.dto_models import SignUpUserModel
 
 
 class SignUpUserSerializer(serializers.Serializer):

@@ -1,4 +1,4 @@
-from accounts.models import SignUpUserModel
+from accounts.dto_models import SignUpUserModel
 from accounts.validators.name_validator import NameValidator
 from accounts.validators.username_validator import UsernameValidator
 from utils.interfaces.validator import Validator

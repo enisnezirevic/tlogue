@@ -6,7 +6,7 @@ import logging
 from botocore.exceptions import ClientError
 from rest_framework.exceptions import ValidationError
 
-from accounts.models import SignUpUserModel
+from accounts.dto_models import SignUpUserModel
 from accounts.services.aws_cognito_client import AwsCognitoClient
 
 
@@ -35,7 +35,7 @@ class AwsCognitoIdentityProvider:
 
         return secret_hash
 
-    def sign_up_user(self, user: SignUpUserModel) -> None:
+    def sign_up_user(self, user: SignUpUserModel):
         """
         Signs up a user to the AWS Cognito user pool.
 
@@ -52,8 +52,10 @@ class AwsCognitoIdentityProvider:
                     {"Name": "given_name", "Value": user.first_name},
                     {"Name": "family_name", "Value": user.last_name},
                 ], "SecretHash": self.__secret_hash(user.email)}
-            self.cognito_client.get_client_instance().sign_up(**kwargs)
+            response = self.cognito_client.get_client_instance().sign_up(**kwargs)
             logging.info(f"User {user.email} signed up successfully.")
+
+            return response
         except ClientError as e:
             logging.error(f"Failed to sign up user {user.email}: {e.response['Error']['Message']}")
             self.__handle_client_error(error=e)
@@ -92,26 +94,6 @@ class AwsCognitoIdentityProvider:
             logging.error(f"Failed to add user {email} to group {group_name}: {e.response['Error']['Message']}")
             self.__handle_client_error(error=e)
 
-    def is_preferred_username_taken(self, preferred_username: str) -> bool:
-        """
-        Check whether username is already in use.
-
-        :param preferred_username: username to check.
-        :return: true if existing user is using the given username, false otherwise.
-        """
-        try:
-            response = self.cognito_client.get_client_instance().list_users(
-                UserPoolId=self.cognito_client.user_pool_id,
-                AttributesToGet=["preferred_username"],
-                Limit=1,
-                Filter=f"preferred_username = \"{preferred_username}\""
-            )
-            logging.info(f"Checked username availability for '{preferred_username}'")
-            return len(response.get("Users", [])) > 0
-        except ClientError as e:
-            logging.error(f"Error checking username availability for '{preferred_username}': {e.response['Error']['Message']}")
-            self.__handle_client_error(error=e)
-
     @staticmethod
     def __handle_client_error(error: ClientError, attribute_name: str = None) -> None:
         """
@@ -125,7 +107,6 @@ class AwsCognitoIdentityProvider:
 
         error_mapping = {
             "InvalidPasswordException": error_message,
-            "UsernameExistsException": "This email address is already associated with an account.",
             "UserLambdaValidationException": "We could not process your registration. Please try again.",
             "ResourceNotFoundException": "Unable to process the request at this time. Please try again later.",
             "UserNotFoundException": f"User with the username '{attribute_name}' could not be found." if attribute_name else "User not found.",

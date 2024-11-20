@@ -1,10 +1,10 @@
-from dataclasses import dataclass
+from django.db import models
 
 
-@dataclass
-class SignUpUserModel:
-    email: str
-    password: str
-    username: str
-    first_name: str
-    last_name: str
+class User(models.Model):
+    cognito_id = models.CharField(unique=True, max_length=255)
+    email = models.EmailField()
+    username = models.CharField(unique=True, max_length=255)
+
+    def __str__(self):
+        return self.email

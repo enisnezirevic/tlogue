@@ -4,7 +4,7 @@ import pytest
 from botocore.exceptions import ClientError
 from rest_framework.exceptions import ValidationError
 
-from accounts.models import SignUpUserModel
+from accounts.dto_models import SignUpUserModel
 from accounts.services.aws_cognito_client import AwsCognitoClient
 from accounts.services.aws_cognito_identity_provider import AwsCognitoIdentityProvider
 
@@ -24,6 +24,7 @@ def aws_identity_provider(aws_cognito_client):
         client_id="test_client_id",
         client_secret="test_client_secret",
     )
+
 
 @pytest.fixture
 def mock_client_instance(aws_cognito_client):
@@ -48,7 +49,7 @@ def test_sign_up_user_with_valid_data_should_create_user(aws_identity_provider, 
     secret_hash_mock = "mocked_secret_hash"
 
     with patch.object(
-        aws_identity_provider, "_AwsCognitoIdentityProvider__secret_hash", return_value=secret_hash_mock
+            aws_identity_provider, "_AwsCognitoIdentityProvider__secret_hash", return_value=secret_hash_mock
     ):
         # Act
         aws_identity_provider.sign_up_user(test_user)
@@ -140,50 +141,3 @@ def test_add_user_to_group_with_nonexistent_user_should_raise_validation_error(a
         Username=email,
         GroupName=group_name,
     )
-
-
-@pytest.mark.parametrize("username", ["testuser", "x"])
-def test_is_preferred_username_taken_with_existing_username_should_return_true(aws_identity_provider, mock_client_instance, username):
-    # Arrange
-    mock_client_instance.list_users.return_value = {"Users": [{"Username": username}]}
-
-    # Act
-    result = aws_identity_provider.is_preferred_username_taken(preferred_username=username)
-
-    # Assert
-    assert result is True
-    mock_client_instance.list_users.assert_called_once_with(
-        UserPoolId=mock_client_instance.user_pool_id,
-        AttributesToGet=["preferred_username"],
-        Limit=1,
-        Filter=f'preferred_username = "{username}"',
-    )
-
-
-@pytest.mark.parametrize("username", ["testuser"])
-def test_is_preferred_username_taken_with_nonexistent_username_should_return_false(aws_identity_provider, mock_client_instance, username):
-    # Arrange
-    mock_client_instance.list_users.return_value = {"Users": []}
-
-    # Act
-    result = aws_identity_provider.is_preferred_username_taken(preferred_username=username)
-
-    # Assert
-    assert result is False
-    mock_client_instance.list_users.assert_called_once_with(
-        UserPoolId=mock_client_instance.user_pool_id,
-        AttributesToGet=["preferred_username"],
-        Limit=1,
-        Filter=f'preferred_username = "{username}"',
-    )
-
-
-def test_is_preferred_username_taken_with_error_should_raise_validation_error(aws_identity_provider, mock_client_instance):
-    # Arrange
-    mock_client_instance.list_users.side_effect = ClientError(
-        {"Error": {"Code": "ResourceNotFoundException", "Message": "Resource not found."}}, "list_users"
-    )
-
-    # Act & Assert
-    with pytest.raises(ValidationError):
-        aws_identity_provider.is_preferred_username_taken("none")
