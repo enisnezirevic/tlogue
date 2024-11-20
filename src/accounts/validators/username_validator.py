@@ -11,11 +11,11 @@ class UsernameValidator(Validator):
 
         :raises ValidationError: If the username cannot be validated.
         """
-        self._validate_presence(username)
-        self._validate_pattern(username)
+        self.__validate_presence(username)
+        self.__validate_pattern(username)
 
     @staticmethod
-    def _validate_presence(username: str):
+    def __validate_presence(username: str):
         """
         Ensure that the username is not None or empty.
 
@@ -25,7 +25,7 @@ class UsernameValidator(Validator):
             raise ValidationError({"username": "Username cannot be empty."})
 
     @staticmethod
-    def _validate_pattern(username: str) -> None:
+    def __validate_pattern(username: str) -> None:
         """
         Validates that the provided username matches the required pattern.
 
