@@ -3,7 +3,7 @@ import boto3
 
 class AwsCognitoClient:
     """
-        Class for interacting with AWS Cognito service using boto3.
+    Class for interacting with AWS Cognito service using boto3.
     """
 
     def __init__(self, aws_access_key: str, aws_secret_access_key: str, region_name: str, user_pool_id: str):
@@ -17,12 +17,12 @@ class AwsCognitoClient:
 
     def get_client_instance(self) -> boto3.client:
         """
-            Lazily initializes and returns the boto3 Cognito Identity Provider client instance.
+        Lazily initializes and returns the boto3 Cognito Identity Provider client instance.
 
-            :returns: boto3.client: The initialized boto3 client for interacting with Cognito.
+        :returns: boto3.client: The initialized boto3 client for interacting with Cognito.
 
-            :raises botocore.exceptions.NoCredentialsError: If AWS credentials are not found.
-            :raises botocore.exceptions.PartialCredentialsError: If partial credentials are provided.
+        :raises botocore.exceptions.NoCredentialsError: If AWS credentials are not found.
+        :raises botocore.exceptions.PartialCredentialsError: If partial credentials are provided.
         """
         if self._client is None:
             self._client = boto3.client(

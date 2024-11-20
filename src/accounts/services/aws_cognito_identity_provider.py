@@ -12,7 +12,7 @@ from accounts.services.aws_cognito_client import AwsCognitoClient
 
 class AwsCognitoIdentityProvider:
     """
-        Provides methods for user management with AWS Cognito.
+    Provides methods for user management with AWS Cognito.
     """
 
     def __init__(self, cognito_client: AwsCognitoClient, client_id: str, client_secret: str):
@@ -22,10 +22,10 @@ class AwsCognitoIdentityProvider:
 
     def __secret_hash(self, email: str) -> str:
         """
-            Generates a secret hash for AWS Cognito authentication.
+        Generates a secret hash for AWS Cognito authentication.
 
-            :param email: The email address of the user.
-            :return: The computed secret hash.
+        :param email: The email address of the user.
+        :return: The computed secret hash.
         """
         key = self.client_secret.encode()
         msg = bytes(email + self.client_id, "utf-8")
@@ -37,10 +37,10 @@ class AwsCognitoIdentityProvider:
 
     def sign_up_user(self, user: SignUpUserModel) -> None:
         """
-            Signs up a user to the AWS Cognito user pool.
+        Signs up a user to the AWS Cognito user pool.
 
-            :param user: The user model containing the user's sign-up details.
-            :raises ValidationError: If the sign-up request fails due to invalid password or any other issue.
+        :param user: The user model containing the user's sign-up details.
+        :raises ValidationError: If the sign-up request fails due to invalid password or any other issue.
         """
         try:
             kwargs = {
@@ -60,8 +60,8 @@ class AwsCognitoIdentityProvider:
 
     def delete_user(self, email: str) -> None:
         """
-            Deletes a user from the AWS Cognito user pool.
-            :param email: The email address of the user to delete.
+        Deletes a user from the AWS Cognito user pool.
+        :param email: The email address of the user to delete.
         """
         try:
             self.cognito_client.get_client_instance().admin_delete_user(
@@ -75,11 +75,11 @@ class AwsCognitoIdentityProvider:
 
     def add_user_to_group(self, email: str, group_name: str) -> None:
         """
-            Adds a user to a specified group in the AWS Cognito user pool.
+        Adds a user to a specified group in the AWS Cognito user pool.
 
-            :param email: The email address of the user to be added to the group.
-            :param group_name: The name of the group to which the user should be added.
-            :raises ValidationError: If adding the user to the group fails.
+        :param email: The email address of the user to be added to the group.
+        :param group_name: The name of the group to which the user should be added.
+        :raises ValidationError: If adding the user to the group fails.
         """
         try:
             self.cognito_client.get_client_instance().admin_add_user_to_group(
