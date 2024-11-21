@@ -12,7 +12,7 @@ from accounts.services.aws_cognito_identity_provider import AwsCognitoIdentityPr
 @pytest.fixture
 def aws_cognito_client():
     client = MagicMock(spec=AwsCognitoClient)
-    client.get_client_instance.return_value = MagicMock()
+    client.get_client.return_value = MagicMock()
     client.user_pool_id = "test_user_pool_id"
     return client
 
@@ -28,7 +28,7 @@ def aws_identity_provider(aws_cognito_client):
 
 @pytest.fixture
 def mock_client_instance(aws_cognito_client):
-    instance = aws_cognito_client.get_client_instance.return_value
+    instance = aws_cognito_client.get_client.return_value
     instance.user_pool_id = aws_cognito_client.user_pool_id
     return instance
 

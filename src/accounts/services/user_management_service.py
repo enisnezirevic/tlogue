@@ -12,12 +12,7 @@ from accounts.validators.account_validator import AccountValidator
 
 class UserManagementService:
     def __init__(self):
-        self.aws_cognito_client = AwsCognitoClient(
-            aws_access_key=AwsCognitoConfig.AWS_ACCESS_KEY,
-            aws_secret_access_key=AwsCognitoConfig.AWS_SECRET_ACCESS_KEY,
-            region_name=AwsCognitoConfig.REGION_NAME,
-            user_pool_id=AwsCognitoConfig.USER_POOL_ID
-        )
+        self.aws_cognito_client = AwsCognitoClient()
         self.aws_cognito_service = AwsCognitoIdentityProvider(
             cognito_client=self.aws_cognito_client,
             client_id=AwsCognitoConfig.CLIENT_ID,

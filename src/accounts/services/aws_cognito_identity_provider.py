@@ -53,7 +53,7 @@ class AwsCognitoIdentityProvider:
                     {"Name": "given_name", "Value": user.first_name},
                     {"Name": "family_name", "Value": user.last_name},
                 ], "SecretHash": self.__secret_hash(user.email)}
-            response = self.cognito_client.get_client_instance().sign_up(**kwargs)
+            response = self.cognito_client.get_client().sign_up(**kwargs)
             logging.info(f"User {user.email} signed up successfully.")
 
             return response
@@ -77,7 +77,7 @@ class AwsCognitoIdentityProvider:
                     "SECRET_HASH": self.__secret_hash(user.email),
                 },
             }
-            response = self.cognito_client.get_client_instance().initiate_auth(**kwargs)
+            response = self.cognito_client.get_client().initiate_auth(**kwargs)
             auth_result = response["AuthenticationResult"]
             return SignInResponse(
                 access_token=auth_result["AccessToken"],
@@ -106,7 +106,7 @@ class AwsCognitoIdentityProvider:
                     "SECRET_HASH": self.__secret_hash(jwt_token_username),
                 }
             }
-            response = self.cognito_client.get_client_instance().initiate_auth(**kwargs)
+            response = self.cognito_client.get_client().initiate_auth(**kwargs)
             return response["AuthenticationResult"]
         except ClientError as e:
             logging.error(f"Failed to refresh token: {e.response['Error']['Message']}")
@@ -118,7 +118,7 @@ class AwsCognitoIdentityProvider:
         :param email: The email address of the user to delete.
         """
         try:
-            self.cognito_client.get_client_instance().admin_delete_user(
+            self.cognito_client.get_client().admin_delete_user(
                 UserPoolId=self.cognito_client.user_pool_id,
                 Username=email
             )
@@ -136,7 +136,7 @@ class AwsCognitoIdentityProvider:
         :raises ValidationError: If adding the user to the group fails.
         """
         try:
-            self.cognito_client.get_client_instance().admin_add_user_to_group(
+            self.cognito_client.get_client().admin_add_user_to_group(
                 UserPoolId=self.cognito_client.user_pool_id,
                 Username=email,
                 GroupName=group_name,
@@ -152,7 +152,7 @@ class AwsCognitoIdentityProvider:
         :param email: Email address of the user.
         """
         try:
-            self.cognito_client.get_client_instance().admin_confirm_sign_up(
+            self.cognito_client.get_client().admin_confirm_sign_up(
                 UserPoolId=self.cognito_client.user_pool_id,
                 Username=email
             )

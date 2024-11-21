@@ -86,12 +86,7 @@ class TokenService:
         :return: New tokens.
         """
         aws_cognito_identity_provider = AwsCognitoIdentityProvider(
-            cognito_client=AwsCognitoClient(
-                aws_access_key=AwsCognitoConfig.AWS_ACCESS_KEY,
-                aws_secret_access_key=AwsCognitoConfig.AWS_SECRET_ACCESS_KEY,
-                region_name=AwsCognitoConfig.REGION_NAME,
-                user_pool_id=AwsCognitoConfig.USER_POOL_ID,
-            ),
+            cognito_client=AwsCognitoClient(),
             client_id=AwsCognitoConfig.CLIENT_ID,
             client_secret=AwsCognitoConfig.CLIENT_SECRET,
         )
