@@ -44,3 +44,10 @@ class UserService:
             return False
 
         return True
+
+    @staticmethod
+    def get_user_by_cognito_id(cognito_id):
+        if User.objects.filter(cognito_id=cognito_id).exists():
+            return User.objects.get(cognito_id=cognito_id)
+
+        return None
