@@ -3,6 +3,7 @@ from pathlib import Path
 import environ
 
 from src.accounts.apps import AccountsConfig
+from src.followers.apps import FollowersConfig
 
 # Environment variables
 env = environ.Env()
@@ -22,7 +23,8 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "rest_framework",
     "django_filters",
-    "accounts.apps.AccountsConfig"
+    "accounts.apps.AccountsConfig",
+    "followers.apps.FollowersConfig"
 ]
 
 MIDDLEWARE = [
@@ -64,3 +66,5 @@ USE_TZ = True
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+APPEND_SLASH = False
