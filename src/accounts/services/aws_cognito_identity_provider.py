@@ -89,6 +89,25 @@ class AwsCognitoIdentityProvider:
             logging.error(f"Failed to sign in: {e.response['Error']['Message']}")
             raise ValidationError(f"Failed to sign up user {user.email}: {e.response['Error']['Message']}")
 
+    def sign_out_user(self, access_token: str):
+        """
+        Signs out an authenticated user from all active sessions in the AWS Cognito service.
+
+        This method invalidates all sessions associated with the given access token, effectively
+        signing the user out globally from all devices.
+
+        :param access_token: The access token of the authenticated user initiating the sign-out request.
+        :return: The response from AWS Cognito confirming the sign-out action.
+        :raises ValidationError: If the sign-out operation fails due to an error from AWS Cognito.
+        :raises ClientError: If there is an issue with the AWS Cognito client interaction.
+        """
+        try:
+            response = self.cognito_client.get_client().global_sign_out(AccessToken=access_token)
+            return response
+        except ClientError as e:
+            logging.error(f"Failed to sign out user: {e.response['Error']['Message']}")
+            raise ValidationError(f"Failed to sign out user: {access_token}")
+
     def refresh_token(self, refresh_token: str, jwt_token_username: str):
         """
         Refresh access and ID tokens using AWS Cognito.

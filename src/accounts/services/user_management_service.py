@@ -59,3 +59,6 @@ class UserManagementService:
 
     def sign_in_user(self, user):
         return self.aws_cognito_service.sign_in_user(user)
+
+    def sign_out_user(self, access_token: str):
+        return self.aws_cognito_service.sign_out_user(access_token=access_token)

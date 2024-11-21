@@ -48,3 +48,20 @@ def sign_in_user(request):
     )
 
     return response
+
+
+@api_view(["POST"])
+def sign_out_user(request):
+    access_token = request.COOKIES.get("access_token")
+
+    if not access_token:
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    user_management_service = UserManagementService()
+    user_management_service.sign_out_user(access_token)
+
+    response = Response(status=status.HTTP_200_OK)
+    response.delete_cookie(key="access_token")
+    response.delete_cookie(key="refresh_token")
+
+    return response
