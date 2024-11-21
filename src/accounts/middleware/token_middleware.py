@@ -1,6 +1,9 @@
 import logging
 
+from rest_framework.exceptions import ValidationError
+
 from accounts.services.token_service import TokenService
+from accounts.services.user_management_service import UserManagementService
 
 
 def token_middleware(get_response):
@@ -32,8 +35,21 @@ def token_middleware(get_response):
                     response.delete_cookie("refresh_token")
                     logging.info("Access token refreshed, refresh token removed.")
             except Exception as e:
-                # TODO: Sign-out user
+                user_management_service = UserManagementService()
+                user_management_service.sign_out_user(access_token=access_token)
                 logging.error(f"Failed to refresh access token: {e}")
+                raise ValidationError(f"Failed to refresh access token: {e}")
+
+        elif access_token:
+            token_service = TokenService()
+            decoded_token = token_service.decode_token(access_token)
+            expiration_timestamp = decoded_token.get("exp")
+
+            if token_service.is_token_expired(expiration_timestamp):
+                user_management_service = UserManagementService()
+                user_management_service.sign_out_user(access_token=access_token)
+                response.delete_cookie("access_token")
+                logging.info("Sign out user, token has expired.")
 
         return response
 
