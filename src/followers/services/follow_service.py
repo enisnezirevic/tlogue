@@ -57,6 +57,38 @@ class FollowService:
             logging.info(f"User {follower.username} successfully unfollowed {followed.username}.")
             return True
         else:
-            logging.warning(f"User {follower.username} attempted to unfollow {followed.username}, but no follow relationship existed.")
+            logging.warning(
+                f"User {follower.username} attempted to unfollow {followed.username}, but no follow relationship existed.")
             raise ValidationError({"error": f"You are not following {followed.username}."})
 
+    @staticmethod
+    def update_follow_properties(follower: User, followed: User, is_muted=None, is_blocked=None):
+        """
+        Updates the properties of a follow relationship.
+
+        :param follower: The user performing the action.
+        :param followed: The user being acted upon.
+        :param is_muted: Boolean to update the is_muted property (optional).
+        :param is_blocked: Boolean to update the is_blocked property (optional).
+        :return: True if the update was successful.
+        """
+        try:
+            follow = Follow.objects.get(follower=follower, followed=followed)
+        except Follow.DoesNotExist:
+            raise ValidationError({"error": "Follow relationship does not exist."})
+
+        updated = False
+        if is_muted is not None and follow.is_muted != is_muted:
+            follow.is_muted = is_muted
+            updated = True
+        if is_blocked is not None and follow.is_blocked != is_blocked:
+            follow.is_blocked = is_blocked
+            updated = True
+
+        if updated:
+            follow.save()
+            logging.info(
+                f"Updated follow relationship: follower={follower.username}, followed={followed.username}, "
+                f"is_muted={follow.is_muted}, is_blocked={follow.is_blocked}."
+            )
+        return updated
