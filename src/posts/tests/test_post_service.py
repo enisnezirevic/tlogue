@@ -38,3 +38,29 @@ def test_create_post_validation_error():
     # Act & Assert
     with pytest.raises(ValidationError):
         post_service.create_post(user, invalid_content)
+
+
+@pytest.mark.django_db
+def test_delete_post_success():
+    # Assign
+    user = User.objects.create(username="user1", cognito_id="user123")
+    post = Post.objects.create(user=user, content="Test post content")
+
+    # Act
+    result = PostService.delete_post(user, post.id)
+
+    # Assert
+    assert result is True
+    assert not Post.objects.filter(id=post.id).exists()
+
+
+@pytest.mark.django_db
+def test_delete_post_user_not_owner():
+    # Assign
+    user1 = User.objects.create(username="user1", cognito_id="user123")
+    user2 = User.objects.create(username="user2", cognito_id="user456")
+    post = Post.objects.create(user=user1, content="Test post content")
+
+    # Act & Assert
+    with pytest.raises(ValidationError):
+        PostService.delete_post(user2, post.id)

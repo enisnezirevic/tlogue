@@ -28,3 +28,19 @@ class PostService:
         except Exception as e:
             logging.error(f"Error occurred while creating post. {e}")
             raise ValidationError(f"Error occurred while creating post.")
+
+    @staticmethod
+    def delete_post(user: User, post_id: int):
+        """
+        Deletes a post from the database.
+        :param user: Creator of the post.
+        :param post_id: ID of the post.
+        :return: True if the post was successfully deleted.
+        """
+        post = Post.objects.get(id=post_id)
+        if post.user.id != user.id:
+            raise ValidationError(f"User {user.username} does not hold the ownership of the post.")
+
+        post.delete()
+        logging.info(f"User {user.username} deleted post with ID {post_id}.")
+        return True
