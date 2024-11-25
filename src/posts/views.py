@@ -68,3 +68,36 @@ def delete_post(request):
     post_service.delete_post(user, post_id)
 
     return Response({"message": "Post was deleted successfully."}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def toggle_like_post(request):
+    post_id = request.query_params.get("post_id")
+    if not post_id:
+        return Response({"error": "Missing 'post_id' query parameter."}, status=status.HTTP_400_BAD_REQUEST)
+
+    access_token = request.COOKIES.get("access_token")
+    if not access_token:
+        return Response({}, status=status.HTTP_401_UNAUTHORIZED)
+
+    try:
+        token_service = TokenService()
+        user_info = token_service.decode_token(access_token)
+    except PyJWTError:
+        return Response(
+            {"error": "Invalid or expired access token."},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    user_service = UserService()
+    user = user_service.get_user_by_cognito_id(user_info["username"])
+    if not user:
+        return Response(
+            {"error": f"Authenticated user with Cognito ID {user_info['username']} not found."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    post_service = PostService()
+    post_service.toggle_like_post(user, post_id)
+
+    return Response(status=status.HTTP_200_OK)
