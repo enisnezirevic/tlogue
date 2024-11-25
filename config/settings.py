@@ -24,7 +24,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "accounts.apps.AccountsConfig",
-    "followers.apps.FollowersConfig"
+    "followers.apps.FollowersConfig",
+    "posts.apps.PostsConfig"
 ]
 
 MIDDLEWARE = [
